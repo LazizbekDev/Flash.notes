@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "Flash Note",
+  "version": "1.4.0",
+  "description": "Sidebar notes • Highlight → Telegram sync • Reminders",
+  "icons": { "128": "icons/icon128.png" },
+  "permissions": [
+    "storage",
+    "sidePanel",
+    "alarms",
+    "notifications",
+    "activeTab",
+    "scripting",
+    "contextMenus"
+  ],
+  "side_panel": { "default_path": "sidepanel.html" },
+  "action": { "default_title": "Flash Note" },
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    { "matches": ["<all_urls>"], "js": ["anchor.js", "floating-ui.js", "content.js"] }
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Z",
+        "mac": "Command+Shift+Z"
+      },
+      "description": "Open Flash Note"
+    },
+    "add_floating_note": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+K",
+        "mac": "Command+Shift+K"
+      },
+      "description": "Add a floating note here"
+    }
+  },
+  "host_permissions": ["*://*/*"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
