@@ -1,144 +1,104 @@
-// background.js - manages alarms, notifications, and highlight sync (no backend/api for now, offline first)
-
 const STORAGE_KEY = 'notes';
-// backend API yo‘q: hozircha offline, faqat local storage asosida ishlaydi
-const BACKEND_BASE_URL = null;
+const FLOATING_STORAGE_KEY = 'floating_notes';
 
-// Executes a provided async function and logs chrome-related errors in a standardized way.
 const safeChromeCall = async (executor) => {
   try {
     return await executor();
   } catch (error) {
-    console.error('[FlashNote][chrome]', error instanceof Error ? error : new Error(String(error)));
+    console.error('[FlashNote][chrome]', error);
     throw error;
   }
 };
 
-const readStorage = (keys) =>
-  safeChromeCall(
-    () =>
-      new Promise((resolve, reject) => {
-        chrome.storage.local.get(keys, (result) => {
-          const runtimeError = chrome.runtime.lastError;
-          if (runtimeError) {
-            reject(runtimeError);
-            return;
-          }
-          resolve(result);
-        });
-      }),
-  );
-
-const writeStorage = (payload) =>
-  safeChromeCall(
-    () =>
-      new Promise((resolve, reject) => {
-        chrome.storage.local.set(payload, () => {
-          const runtimeError = chrome.runtime.lastError;
-          if (runtimeError) {
-            reject(runtimeError);
-            return;
-          }
-          resolve();
-        });
-      }),
-  );
-
-
+const getStorage = (area, keys) =>
+  new Promise((resolve) => {
+    chrome.storage[area].get(keys, (res) => {
+      if (chrome.runtime.lastError) {
+        console.error(chrome.runtime.lastError);
+        resolve({});
+      } else {
+        resolve(res);
+      }
+    });
+  });
 
 const pushHighlightNote = async (text) => {
-  if (!text?.trim()) {
-    return;
-  }
+  if (!text?.trim()) return;
 
-  const { [STORAGE_KEY]: notes = [] } =
-    await readStorage([STORAGE_KEY]);
+  const res = await getStorage('sync', [STORAGE_KEY]);
+  const notes = res[STORAGE_KEY] || [];
 
   const newNote = {
     id: crypto.randomUUID(),
     text: text.trim(),
     createdAt: Date.now(),
     source: 'highlight',
+    type: 'note'
   };
 
   const updatedNotes = [newNote, ...notes];
-  await writeStorage({ [STORAGE_KEY]: updatedNotes });
+  await chrome.storage.sync.set({ [STORAGE_KEY]: updatedNotes });
 
-  try {
-    chrome.runtime.sendMessage({ type: 'note-added', note: newNote }, () => {
-      // Suppress unhandled error
-      const err = chrome.runtime.lastError;
-    });
-  } catch (error) {
-    console.warn('[FlashNote][notify]', error);
-  }
+  chrome.runtime.sendMessage({ type: 'note-added', note: newNote }, () => {
+    const err = chrome.runtime.lastError;
+  });
 };
 
-// Listenerlarni global tashqarida declare qilish Chrome MV3 uchun to‘g‘ri (bir marta ishlaydi)
-chrome.runtime.onMessage.addListener((message, _sender, _sendResponse) => {
-  // async funksiyani event listenerda bevosita qo‘llash mumkin emas, shuning uchun .then/catch
+chrome.runtime.onMessage.addListener((message) => {
   if (message?.type === 'highlight') {
-    pushHighlightNote(message.text).catch((error) =>
-      console.error('[FlashNote][pushHighlightNote]', error),
-    );
+    pushHighlightNote(message.text).catch(console.error);
   }
 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   try {
     const noteId = alarm?.name;
-    if (!noteId) {
-      return;
-    }
+    if (!noteId) return;
 
-    const { [STORAGE_KEY]: notes = [] } = await readStorage([STORAGE_KEY]);
-    const note = notes.find((item) => item.id === noteId);
+    // Check Sync Storage first (manual/highlights)
+    const resSync = await getStorage('sync', [STORAGE_KEY]);
+    let notes = resSync[STORAGE_KEY] || [];
+    let note = notes.find(n => n.id === noteId);
+    chrome.storage.local.get(['notes', 'floating_notes'], (res) => {
+      const allNotes = [...(res.notes || []), ...(res.floating_notes || [])];
+      const note = allNotes.find(n => n.id === alarm.name);
 
-    if (!note) {
-      return;
-    }
+      if (note) {
+        chrome.notifications.create(note.id, {
+          type: 'basic',
+          iconUrl: 'icons/icon128.png',
+          title: 'Flash Note Reminder',
+          message: note.text || note.content || 'Time to check your note!',
+          priority: 2
+        });
 
-    await safeChromeCall(
-      () =>
-        new Promise((resolve, reject) => {
-          chrome.notifications.create(
-            noteId,
-            {
-              type: 'basic',
-              iconUrl: 'icons/icon128.png',
-              title: 'Flash Note Reminder',
-              message: note.text.slice(0, 125),
-              priority: 2,
-            },
-            () => {
-              const runtimeError = chrome.runtime.lastError;
-              if (runtimeError) {
-                reject(runtimeError);
-                return;
-              }
-              resolve();
-            },
-          );
-        }),
-    );
-
-    const refreshedNotes = notes.map((item) =>
-      item.id === noteId ? { ...item, reminderAt: null } : item,
-    );
-    await writeStorage({ [STORAGE_KEY]: refreshedNotes });
+        // Mark reminder as triggered/removed in UI
+        if (note.anchor) {
+          // It's a floating note
+          const idx = res.floating_notes.findIndex(n => n.id === alarm.name);
+          if (idx >= 0) {
+            delete res.floating_notes[idx].reminderAt;
+            chrome.storage.local.set({ floating_notes: res.floating_notes });
+          }
+        } else {
+          // It's a manual note
+          const idx = res.notes.findIndex(n => n.id === alarm.name);
+          if (idx >= 0) {
+            delete res.notes[idx].reminderAt;
+            chrome.storage.local.set({ notes: res.notes });
+          }
+        }
+      }
+    });
   } catch (error) {
     console.error('[FlashNote][alarm]', error);
   }
 });
 
-// ENG MUHIM QISM – Action bosilganda majburan ochish
 chrome.action.onClicked.addListener(async (tab) => {
   try {
-    // Bu qator eng kuchli: agar boshqa usullar ishlamasa ham shu ishlaydi
     await chrome.sidePanel.open({ tabId: tab.id });
   } catch (error) {
-    console.log("sidePanel.open ishlamadi, fallback ishlatilyapti");
-    // Fallback: window fokus qilish
     await chrome.windows.update(tab.windowId, { focused: true });
   }
 });

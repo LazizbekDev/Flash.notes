@@ -4,132 +4,226 @@ class FloatingUI {
   constructor() {
     this.container = document.createElement('div');
     this.container.id = 'flash-note-floating-container';
-    this.container.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 2147483647;';
+    this.container.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2147483647;';
 
     this.shadow = this.container.attachShadow({ mode: 'open' });
 
     const style = document.createElement('style');
     style.textContent = `
+      @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=DM+Sans:wght@300;400;500;600&display=swap');
+
       :host {
-        --fn-bg: #ffffff;
-        --fn-text-main: #111827;
-        --fn-text-muted: #6b7280;
-        --fn-border: #e5e7eb;
-        --fn-accent: #0ea5e9;
-        --fn-accent-hover: #0284c7;
-        --fn-danger: #ef4444;
-        --fn-input-bg: #f3f4f6;
-        --fn-shadow-card: 0 12px 32px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0,0,0,0.04);
-        --fn-shadow-marker: 0 8px 16px rgba(255, 65, 84, 0.35);
-        font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        --fn-bg:          #FFFEFB;
+        --fn-bg2:         #F5F2ED;
+        --fn-bg3:         #F0EDE8;
+        --fn-ink:         #1C1917;
+        --fn-ink2:        #57534E;
+        --fn-ink3:        #A8A29E;
+        --fn-border:      #E7E3DC;
+        --fn-border2:     #D6D0C8;
+        --fn-amber:       #D97706;
+        --fn-amber-bg:    #FEF3C7;
+        --fn-amber-dim:   #92400E;
+        --fn-danger:      #DC2626;
+        --fn-danger-bg:   #FEE2E2;
+        --fn-shadow:      0 8px 24px rgba(28, 25, 23, 0.10), 0 2px 6px rgba(28, 25, 23, 0.06);
+        --fn-shadow-sm:   0 2px 8px rgba(28, 25, 23, 0.08);
+        --fn-mono:        'DM Mono', 'Courier New', monospace;
+        --fn-sans:        'DM Sans', system-ui, sans-serif;
+        --fn-r:           6px;
+        --fn-r2:          10px;
+        --fn-r3:          14px;
       }
 
+      @media (prefers-color-scheme: dark) {
+        :host(:not([data-theme="light"])) {
+          --fn-bg:          #18181B;
+          --fn-bg2:         #09090B;
+          --fn-bg3:         #27272A;
+          --fn-ink:         #FAFAFA;
+          --fn-ink2:        #D4D4D8;
+          --fn-ink3:        #A1A1AA;
+          --fn-border:      #27272A;
+          --fn-border2:     #3F3F46;
+          --fn-amber:       #F59E0B;
+          --fn-amber-bg:    #451A03;
+          --fn-amber-dim:   #FCD34D;
+          --fn-danger:      #EF4444;
+          --fn-danger-bg:   #450A0A;
+          --fn-shadow:      0 12px 32px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.25);
+          --fn-shadow-sm:   0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+      }
+
+      :host([data-theme="dark"]) {
+        --fn-bg:          #18181B;
+        --fn-bg2:         #09090B;
+        --fn-bg3:         #27272A;
+        --fn-ink:         #FAFAFA;
+        --fn-ink2:        #D4D4D8;
+        --fn-ink3:        #A1A1AA;
+        --fn-border:      #27272A;
+        --fn-border2:     #3F3F46;
+        --fn-amber:       #F59E0B;
+        --fn-amber-bg:    #451A03;
+        --fn-amber-dim:   #FCD34D;
+        --fn-danger:      #EF4444;
+        --fn-danger-bg:   #450A0A;
+        --fn-shadow:      0 12px 32px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.25);
+        --fn-shadow-sm:   0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+
+      :host([data-theme="light"]) {
+        --fn-bg:          #FFFEFB;
+        --fn-bg2:         #F5F2ED;
+        --fn-bg3:         #F0EDE8;
+        --fn-ink:         #1C1917;
+        --fn-ink2:        #57534E;
+        --fn-ink3:        #A8A29E;
+        --fn-border:      #E7E3DC;
+        --fn-border2:     #D6D0C8;
+        --fn-amber:       #D97706;
+        --fn-amber-bg:    #FEF3C7;
+        --fn-amber-dim:   #92400E;
+        --fn-danger:      #DC2626;
+        --fn-danger-bg:   #FEE2E2;
+        --fn-shadow:      0 8px 24px rgba(28, 25, 23, 0.10), 0 2px 6px rgba(28, 25, 23, 0.06);
+        --fn-shadow-sm:   0 2px 8px rgba(28, 25, 23, 0.08);
+      }
+
+      /* ── WRAPPER ── */
       .note-wrapper {
         position: absolute;
         pointer-events: auto;
         z-index: 1;
+        will-change: transform;
+        transition: opacity 0.2s;
       }
-      
+
       .note-wrapper.open {
         z-index: 10;
       }
 
-      /* 3D Red Envelope Marker */
+      /* ── MARKER ── */
       .custom-red-marker {
         position: relative;
         width: 32px;
-        height: 24px;
+        height: 32px;
         cursor: grab;
-        filter: var(--fn-shadow-marker);
         transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-        z-index: 6; /* above drag overlay */
+        z-index: 6;
       }
-      
+
       .custom-red-marker:active {
         cursor: grabbing;
       }
-      
+
       .custom-red-marker:hover {
-        transform: scale(1.05) translateY(-2px);
+        transform: scale(1.1) translateY(-2px);
       }
 
       .marker-bubble {
         width: 100%;
         height: 100%;
-        background: linear-gradient(135deg, #ff6b77, #ff4154);
-        border-radius: 8px;
+        background: var(--fn-amber);
+        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         position: relative;
         z-index: 2;
-        box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.69);
+        box-shadow: var(--fn-shadow-sm);
       }
 
       .marker-bubble svg {
-        width: 16px;
-        height: 16px;
-        color: white;
+        width: 14px;
+        height: 14px;
+        stroke: white;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
       }
 
-      /* Dynamic Tail */
+      /* amber dot indicator */
+      .marker-bubble::after {
+        content: '';
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        width: 9px;
+        height: 9px;
+        background: var(--fn-ink);
+        border-radius: 50%;
+        border: 2px solid var(--fn-bg);
+      }
+
+      /* ── DYNAMIC TAIL ── */
       .dynamic-tail-container {
         position: absolute;
-        top: 50%; left: 50%;
-        width: 0; height: 0;
-        z-index: 1; /* behind the bubble */
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        z-index: 1;
         pointer-events: none;
       }
-      
+
       .dynamic-tail {
         position: absolute;
-        left: 10px; /* start at edge of bubble */
-        top: -6px; /* center vertically */
-        width: 0; height: 0;
-        border-top: 6px solid transparent;
-        border-bottom: 6px solid transparent;
-        border-left: 12px solid #ff6372ff;
+        left: 10px;
+        top: -5px;
+        width: 0;
+        height: 0;
+        border-top: 5px solid transparent;
+        border-bottom: 5px solid transparent;
+        border-left: 10px solid var(--fn-ink);
+        opacity: 0.5;
       }
 
-      /* Dim Overlay for Dragging */
+      /* ── DRAG OVERLAY ── */
       .drag-highlight-overlay {
         position: fixed;
-        top: 0; left: 0; width: 100vw; height: 100vh;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
         pointer-events: none;
         z-index: 4;
         display: none;
       }
-      
+
       .drag-highlight-overlay.active {
         display: block;
       }
-      
+
       .drag-highlight-box {
         position: absolute;
-        box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
-        border: 2px solid var(--fn-accent);
-        border-radius: 4px;
-        transition: all 0.1s ease;
+        box-shadow: 0 0 0 9999px rgba(28, 25, 23, 0.45);
+        border: 1.5px solid var(--fn-amber);
+        border-radius: var(--fn-r);
+        transition: all 0.08s ease;
       }
 
-      /* Figma-style Popup Card */
+      /* ── FIGMA CARD ── */
       .figma-card {
         position: absolute;
-        top: 36px;
+        top: 38px;
         left: 50%;
-        transform: translateX(-50%) scale(0.95);
+        transform: translateX(-50%) scale(0.96);
         opacity: 0;
         visibility: hidden;
-        width: 340px;
+        width: 320px;
         background: var(--fn-bg);
         border: 1px solid var(--fn-border);
-        border-radius: 16px;
-        box-shadow: var(--fn-shadow-card);
+        border-radius: var(--fn-r3);
+        box-shadow: var(--fn-shadow);
         display: flex;
         flex-direction: column;
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                    visibility 0.18s;
         pointer-events: none;
         z-index: 10;
+        overflow: hidden;
       }
 
       .note-wrapper.open .figma-card {
@@ -139,133 +233,183 @@ class FloatingUI {
         pointer-events: auto;
       }
 
-      /* Card Header */
+      /* ── CARD HEADER ── */
       .card-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 12px 16px;
+        padding: 10px 12px 10px 14px;
         border-bottom: 1px solid var(--fn-border);
+        background: var(--fn-bg2);
       }
 
       .header-title {
-        font-weight: 600;
-        font-size: 14px;
-        color: var(--fn-text-main);
+        font-family: var(--fn-mono);
+        font-weight: 500;
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        color: var(--fn-ink3);
+        text-transform: lowercase;
       }
 
       .header-actions {
         display: flex;
-        gap: 8px;
+        gap: 4px;
         align-items: center;
       }
 
       .icon-btn {
-        background: none;
-        border: none;
-        color: var(--fn-text-muted);
+        width: 26px;
+        height: 26px;
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: var(--fn-r);
+        color: var(--fn-ink3);
         cursor: pointer;
-        padding: 4px;
-        border-radius: 4px;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.15s;
+        transition: background 0.12s, color 0.12s, border-color 0.12s;
+        font-family: var(--fn-sans);
       }
 
       .icon-btn:hover {
-        background: var(--fn-input-bg);
-        color: var(--fn-text-main);
-      }
-      
-      .icon-btn svg {
-        width: 18px;
-        height: 18px;
+        background: var(--fn-bg3);
+        border-color: var(--fn-border2);
+        color: var(--fn-ink);
       }
 
-      /* Scroll Area */
+      .icon-btn.resolve-btn:hover {
+        background: var(--fn-danger-bg);
+        border-color: #FECACA;
+        color: var(--fn-danger);
+      }
+
+      .icon-btn svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      /* ── SCROLL AREA ── */
       .card-scroll-area {
-        max-height: 400px;
+        max-height: 320px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
+        background: var(--fn-bg);
       }
 
-      /* Comment Block */
+      .card-scroll-area::-webkit-scrollbar {
+        width: 3px;
+      }
+
+      .card-scroll-area::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .card-scroll-area::-webkit-scrollbar-thumb {
+        background: var(--fn-border2);
+        border-radius: 2px;
+      }
+
+      /* ── COMMENT BLOCK ── */
       .comment-block {
         display: flex;
-        gap: 12px;
-        padding: 16px;
+        flex-direction: column;
+        gap: 5px;
+        padding: 12px 14px;
         border-bottom: 1px solid var(--fn-border);
       }
-      
+
       .comment-block:last-child {
         border-bottom: none;
       }
 
-      .comment-content {
-        flex: 1;
-        min-width: 0;
+      .comment-block.is-reply {
+        padding-left: 22px;
+        background: var(--fn-bg2);
+        border-left: 2px solid var(--fn-border2);
+        margin-left: 14px;
+        margin-right: 0;
+        border-bottom-color: var(--fn-border);
       }
 
       .comment-meta {
         display: flex;
-        align-items: baseline;
-        margin-bottom: 8px;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .meta-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--fn-amber);
+        flex-shrink: 0;
+      }
+
+      .comment-block.is-reply .meta-dot {
+        background: var(--fn-ink3);
+        width: 4px;
+        height: 4px;
       }
 
       .time {
-        font-size: 12px;
-        color: var(--fn-text-muted);
-        font-weight: 500;
+        font-family: var(--fn-mono);
+        font-size: 10px;
+        color: var(--fn-ink3);
+        letter-spacing: 0.03em;
       }
 
       .comment-text {
-        font-size: 14px;
-        line-height: 1.5;
-        color: var(--fn-text-main);
+        font-family: var(--fn-mono);
+        font-size: 13px;
+        line-height: 1.6;
+        color: var(--fn-ink);
         word-break: break-word;
       }
 
-      /* Reply Input Footer */
+      /* ── FOOTER INPUT ── */
       .card-footer {
         display: flex;
-        gap: 12px;
-        padding: 16px;
+        flex-direction: column;
         background: var(--fn-bg);
         border-top: 1px solid var(--fn-border);
-        border-bottom-left-radius: 16px;
-        border-bottom-right-radius: 16px;
       }
 
       .input-container {
-        flex: 1;
-        background: var(--fn-input-bg);
-        border-radius: 12px;
         display: flex;
         flex-direction: column;
+        background: var(--fn-bg2);
         border: 1px solid transparent;
-        transition: border-color 0.2s;
+        margin: 10px;
+        border-radius: var(--fn-r2);
+        transition: border-color 0.18s;
+        overflow: hidden;
       }
-      
+
       .input-container:focus-within {
-        border-color: #cbd5e1;
+        border-color: var(--fn-ink);
+        background: var(--fn-bg);
       }
 
       .input-editor {
-        padding: 12px 12px 8px 12px;
-        font-size: 14px;
-        line-height: 1.5;
-        color: var(--fn-text-main);
+        padding: 10px 12px 6px;
+        font-family: var(--fn-mono);
+        font-size: 13px;
+        line-height: 1.6;
+        color: var(--fn-ink);
         outline: none;
-        min-height: 24px;
-        max-height: 150px;
+        min-height: 20px;
+        max-height: 120px;
         overflow-y: auto;
+        word-break: break-word;
       }
 
-      .input-editor:empty:before {
+      .input-editor:empty::before {
         content: attr(data-placeholder);
-        color: #9ca3af;
+        color: var(--fn-ink3);
+        font-style: italic;
         pointer-events: none;
       }
 
@@ -273,40 +417,53 @@ class FloatingUI {
         display: flex;
         justify-content: flex-end;
         align-items: center;
-        padding: 4px 8px 8px 12px;
+        padding: 4px 8px 8px;
+        gap: 6px;
+      }
+
+      .input-hint {
+        font-family: var(--fn-mono);
+        font-size: 10px;
+        color: var(--fn-ink3);
+        margin-right: auto;
+        letter-spacing: 0.02em;
       }
 
       .submit-btn {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        background: var(--fn-accent);
+        height: 26px;
+        padding: 0 12px;
+        border-radius: 20px;
+        background: var(--fn-amber);
         border: none;
         display: flex;
         align-items: center;
-        justify-content: center;
+        gap: 5px;
         cursor: pointer;
         color: white;
-        transition: background 0.15s;
-        box-shadow: 0 2px 4px rgba(14, 165, 233, 0.3);
+        font-family: var(--fn-mono);
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        transition: opacity 0.15s;
       }
 
       .submit-btn:hover {
-        background: var(--fn-accent-hover);
-      }
-      
-      .submit-btn svg {
-        width: 16px;
-        height: 16px;
+        opacity: 0.82;
       }
 
+      .submit-btn svg {
+        width: 11px;
+        height: 11px;
+      }
+
+      /* ── HIDDEN ── */
       .hidden {
         display: none !important;
       }
     `;
     this.shadow.appendChild(style);
 
-    // Dim Overlay for Drag
+    // Drag Overlay
     this.dragOverlay = document.createElement('div');
     this.dragOverlay.classList.add('drag-highlight-overlay');
     this.dragOverlay.innerHTML = '<div class="drag-highlight-box"></div>';
@@ -322,50 +479,39 @@ class FloatingUI {
 
     document.addEventListener('mousedown', (e) => {
       if (this.container.classList.contains('hidden')) return;
-
       let clickedInside = false;
       const path = e.composedPath();
       for (const node of path) {
-        if (node === this.container) {
-          clickedInside = true;
-          break;
-        }
+        if (node === this.container) { clickedInside = true; break; }
       }
-
-      if (!clickedInside) {
-        this.closeAllPopups();
-      }
+      if (!clickedInside) this.closeAllPopups();
     });
   }
 
   closeAllPopups() {
     for (const note of this.notes.values()) {
-      if (note.element.classList.contains('open')) {
-        note.element.classList.remove('open');
-      }
+      note.element.classList.remove('open');
     }
   }
 
   formatTime(timestamp) {
     const d = new Date(timestamp);
-    return d.toLocaleString('uz-UZ', {
-      day: 'numeric', month: 'short', year: 'numeric',
-      hour: '2-digit', minute: '2-digit'
-    });
+    const now = new Date();
+    const diff = (now - d) / 1000;
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    return d.toLocaleDateString('en', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
 
   updateTailRotation(markerEl, anchorRect) {
     const tailContainer = markerEl.querySelector('.dynamic-tail-container');
     if (!tailContainer || !anchorRect) return;
-
     const markerRect = markerEl.getBoundingClientRect();
     const markerCX = markerRect.left + markerRect.width / 2;
     const markerCY = markerRect.top + markerRect.height / 2;
-
     const anchorCX = anchorRect.left + anchorRect.width / 2;
     const anchorCY = anchorRect.top + anchorRect.height / 2;
-
-    // Calculate angle towards anchor center
     const angle = Math.atan2(anchorCY - markerCY, anchorCX - markerCX);
     tailContainer.style.transform = `rotate(${angle}rad)`;
   }
@@ -374,16 +520,16 @@ class FloatingUI {
     const wrapper = document.createElement('div');
     wrapper.classList.add('note-wrapper');
     wrapper.dataset.id = noteData.id;
-
     if (isNew) wrapper.classList.add('open');
 
-    // 1. Red Envelope Marker
+    // ── MARKER ──
     const marker = document.createElement('div');
     marker.classList.add('custom-red-marker');
     marker.innerHTML = `
       <div class="marker-bubble">
-        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-          <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+        <svg viewBox="0 0 24 24">
+          <path d="M12 20h9"/>
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
         </svg>
       </div>
       <div class="dynamic-tail-container">
@@ -391,66 +537,62 @@ class FloatingUI {
       </div>
     `;
 
-    // Drag and Drop Logic
+    // Drag logic
     let hasDragged = false;
 
     marker.addEventListener('mousedown', (e) => {
       e.stopPropagation();
-      e.preventDefault(); // Prevent text selection
+      e.preventDefault();
 
       const anchorEl = window.FlashNoteAnchor.findElementByAnchor(noteData.anchor);
       if (!anchorEl) return;
 
       const anchorRect = anchorEl.getBoundingClientRect();
 
-      // Show Drag Overlay & Highlight Element
       this.dragOverlay.classList.add('active');
       this.dragBox.style.top = anchorRect.top + 'px';
       this.dragBox.style.left = anchorRect.left + 'px';
       this.dragBox.style.width = anchorRect.width + 'px';
       this.dragBox.style.height = anchorRect.height + 'px';
 
-      // Calculate start offset relative to wrapper's top/left
       const rect = wrapper.getBoundingClientRect();
       const offsetX = e.clientX - rect.left;
       const offsetY = e.clientY - rect.top;
 
       hasDragged = false;
 
+      const startX = e.clientX;
+      const startY = e.clientY;
+
       const mouseMove = (ev) => {
-        hasDragged = true;
+        if (!hasDragged) {
+          if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 5) return;
+          hasDragged = true;
+        }
+        const padding = 60;
         let newLeft = ev.clientX - offsetX;
         let newTop = ev.clientY - offsetY;
 
-        const markerWidth = 32;
-        const markerHeight = 24;
-        const padding = 60; // Allow dragging outside element slightly
-
-        // Bound to the element + padding
         if (newLeft < anchorRect.left - padding) newLeft = anchorRect.left - padding;
-        if (newLeft > anchorRect.right + padding - markerWidth) newLeft = anchorRect.right + padding - markerWidth;
+        if (newLeft > anchorRect.right + padding - 30) newLeft = anchorRect.right + padding - 30;
         if (newTop < anchorRect.top - padding) newTop = anchorRect.top - padding;
-        if (newTop > anchorRect.bottom + padding - markerHeight) newTop = anchorRect.bottom + padding - markerHeight;
+        if (newTop > anchorRect.bottom + padding - 30) newTop = anchorRect.bottom + padding - 30;
 
         noteData.markerOffsetX = newLeft - anchorRect.right;
         noteData.markerOffsetY = newTop - anchorRect.top;
 
-        wrapper.style.left = newLeft + 'px';
-        wrapper.style.top = newTop + 'px';
+        wrapper.style.transform = `translate3d(${newLeft + window.scrollX}px, ${newTop + window.scrollY}px, 0)`;
+        wrapper.style.left = '0';
+        wrapper.style.top = '0';
 
-        // Update tail direction while dragging
         this.updateTailRotation(marker, anchorRect);
       };
 
       const mouseUp = () => {
         document.removeEventListener('mousemove', mouseMove);
         document.removeEventListener('mouseup', mouseUp);
-
         this.dragOverlay.classList.remove('active');
-
-        if (hasDragged) {
-          this.saveNoteData(noteData);
-        }
+        if (hasDragged) this.saveNoteData(noteData);
       };
 
       document.addEventListener('mousemove', mouseMove);
@@ -459,14 +601,13 @@ class FloatingUI {
 
     marker.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (hasDragged) return; // Prevent opening popup if we just dragged the marker
-
+      if (hasDragged) return;
       const isOpen = wrapper.classList.contains('open');
       this.closeAllPopups();
       if (!isOpen) wrapper.classList.add('open');
     });
 
-    // 2. Figma-Style Card
+    // ── CARD ──
     const card = document.createElement('div');
     card.classList.add('figma-card');
     card.addEventListener('mousedown', e => e.stopPropagation());
@@ -475,21 +616,26 @@ class FloatingUI {
     const header = document.createElement('div');
     header.classList.add('card-header');
     header.innerHTML = `
-      <div class="header-title">Comment</div>
+      <span class="header-title">comment</span>
       <div class="header-actions">
-        <button class="icon-btn resolve-btn" title="Delete">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        <button class="icon-btn resolve-btn" title="Delete note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+          </svg>
         </button>
         <button class="icon-btn close-btn" title="Close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
         </button>
       </div>
     `;
-
     header.querySelector('.close-btn').onclick = () => wrapper.classList.remove('open');
     header.querySelector('.resolve-btn').onclick = () => this.deleteNote(noteData.id);
 
-    // Scroll Area for Comments/Replies
+    // Scroll area
     const scrollArea = document.createElement('div');
     scrollArea.classList.add('card-scroll-area');
 
@@ -500,68 +646,60 @@ class FloatingUI {
         return;
       }
       scrollArea.classList.remove('hidden');
-
-      const mainBlock = this.createCommentBlock(noteData.createdAt, noteData.content);
-      scrollArea.appendChild(mainBlock);
-
+      scrollArea.appendChild(this.createCommentBlock(noteData.createdAt, noteData.content, false));
       if (noteData.replies && noteData.replies.length > 0) {
         noteData.replies.forEach(reply => {
-          const replyBlock = this.createCommentBlock(reply.createdAt, reply.content);
-          scrollArea.appendChild(replyBlock);
+          scrollArea.appendChild(this.createCommentBlock(reply.createdAt, reply.content, true));
         });
       }
-
-      setTimeout(() => {
-        scrollArea.scrollTop = scrollArea.scrollHeight;
-      }, 50);
+      setTimeout(() => { scrollArea.scrollTop = scrollArea.scrollHeight; }, 50);
     };
 
-    // Footer Input Area
+    // Footer
     const footer = document.createElement('div');
     footer.classList.add('card-footer');
-    footer.innerHTML = `
-      <div class="input-container">
-        <div class="input-editor" contenteditable="true" data-placeholder="Reply..."></div>
-        <div class="input-actions">
-          <button class="submit-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
-          </button>
-        </div>
+
+    const inputContainer = document.createElement('div');
+    inputContainer.classList.add('input-container');
+    inputContainer.innerHTML = `
+      <div class="input-editor" contenteditable="true" data-placeholder="${isNew ? 'add a comment…' : 'reply…'}"></div>
+      <div class="input-actions">
+        <span class="input-hint">⌘↵ to send</span>
+        <button class="submit-btn">
+          send
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"/>
+            <polyline points="5 12 12 5 19 12"/>
+          </svg>
+        </button>
       </div>
     `;
+    footer.appendChild(inputContainer);
 
-    const editor = footer.querySelector('.input-editor');
-    if (isNew) editor.dataset.placeholder = "Add a comment...";
+    const editor = inputContainer.querySelector('.input-editor');
+    const submitBtn = inputContainer.querySelector('.submit-btn');
 
-    const submitBtn = footer.querySelector('.submit-btn');
     submitBtn.onclick = () => {
       const text = editor.innerHTML.trim();
       if (!text) {
         if (isNew) this.deleteNote(noteData.id);
         return;
       }
-
       if (!noteData.content) {
         noteData.content = text;
       } else {
         if (!noteData.replies) noteData.replies = [];
-        noteData.replies.push({
-          id: crypto.randomUUID(),
-          content: text,
-          createdAt: Date.now()
-        });
+        noteData.replies.push({ id: crypto.randomUUID(), content: text, createdAt: Date.now() });
       }
-
       editor.innerHTML = '';
-      editor.dataset.placeholder = "Reply...";
-
+      editor.dataset.placeholder = 'reply…';
       this.saveNoteData(noteData);
       renderThread();
-      wrapper.classList.remove('open'); // Close after sending reply just to be clean
+      wrapper.classList.remove('open');
     };
 
     editor.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         submitBtn.click();
       }
@@ -572,38 +710,33 @@ class FloatingUI {
     card.appendChild(header);
     card.appendChild(scrollArea);
     card.appendChild(footer);
-
     wrapper.appendChild(marker);
     wrapper.appendChild(card);
-
     this.shadow.appendChild(wrapper);
 
-    this.notes.set(noteData.id, {
-      data: noteData,
-      element: wrapper,
-      renderThread: renderThread
+    // Prevent events from leaking to the website
+    ['click', 'keydown', 'keyup', 'keypress', 'contextmenu', 'dblclick'].forEach(evt => {
+      wrapper.addEventListener(evt, e => e.stopPropagation());
     });
 
-    if (isNew) {
-      setTimeout(() => editor.focus(), 50);
-    }
+    this.notes.set(noteData.id, { data: noteData, element: wrapper, renderThread });
+
+    if (isNew) setTimeout(() => editor.focus(), 50);
 
     this.updatePosition(noteData.id);
   }
 
-  createCommentBlock(timestamp, content) {
+  createCommentBlock(timestamp, content, isReply = false) {
     const block = document.createElement('div');
     block.classList.add('comment-block');
-
+    if (isReply) block.classList.add('is-reply');
     block.innerHTML = `
-      <div class="comment-content">
-        <div class="comment-meta">
-          <span class="time">${this.formatTime(timestamp)}</span>
-        </div>
-        <div class="comment-text">${content}</div>
+      <div class="comment-meta">
+        <span class="meta-dot"></span>
+        <span class="time">${this.formatTime(timestamp)}</span>
       </div>
+      <div class="comment-text">${content}</div>
     `;
-
     return block;
   }
 
@@ -618,32 +751,25 @@ class FloatingUI {
     }
 
     note.element.style.display = '';
-
     const rect = anchorEl.getBoundingClientRect();
+    const offsetX = note.data.markerOffsetX !== undefined ? note.data.markerOffsetX : -24;
+    const offsetY = note.data.markerOffsetY !== undefined ? note.data.markerOffsetY : -36;
 
-    let offsetX = note.data.markerOffsetX !== undefined ? note.data.markerOffsetX : -24;
-    let offsetY = note.data.markerOffsetY !== undefined ? note.data.markerOffsetY : -36;
+    const absX = rect.right + window.scrollX + offsetX;
+    const absY = rect.top + window.scrollY + offsetY;
 
-    let posX = rect.right + offsetX;
-    let posY = rect.top + offsetY;
+    note.element.style.transform = `translate3d(${absX}px, ${absY}px, 0)`;
+    note.element.style.left = '0';
+    note.element.style.top = '0';
 
-    note.element.style.left = posX + 'px';
-    note.element.style.top = posY + 'px';
-
-    // Also update tail rotation natively
     const marker = note.element.querySelector('.custom-red-marker');
     if (marker) {
-      // Need to wait for next frame to ensure marker has updated bounding rect
-      requestAnimationFrame(() => {
-        this.updateTailRotation(marker, rect);
-      });
+      requestAnimationFrame(() => this.updateTailRotation(marker, rect));
     }
   }
 
   updateAllPositions() {
-    for (const id of this.notes.keys()) {
-      this.updatePosition(id);
-    }
+    for (const id of this.notes.keys()) this.updatePosition(id);
   }
 
   deleteNote(id) {
@@ -651,10 +777,8 @@ class FloatingUI {
     if (note) {
       note.element.remove();
       this.notes.delete(id);
-
       chrome.storage.local.get(['floating_notes'], (res) => {
-        let notes = res.floating_notes || [];
-        notes = notes.filter(n => n.id !== id);
+        let notes = (res.floating_notes || []).filter(n => n.id !== id);
         chrome.storage.local.set({ floating_notes: notes });
         chrome.runtime.sendMessage({ type: 'floating-note-deleted', id });
       });
@@ -665,15 +789,9 @@ class FloatingUI {
     chrome.storage.local.get(['floating_notes'], (res) => {
       let notes = res.floating_notes || [];
       const index = notes.findIndex(n => n.id === noteData.id);
-
       noteData.updatedAt = Date.now();
-
-      if (index >= 0) {
-        notes[index] = noteData;
-      } else {
-        notes.push(noteData);
-      }
-
+      if (index >= 0) notes[index] = noteData;
+      else notes.push(noteData);
       chrome.storage.local.set({ floating_notes: notes }, () => {
         chrome.runtime.sendMessage({ type: 'floating-note-updated', note: noteData });
       });
@@ -683,15 +801,19 @@ class FloatingUI {
   loadNotesForCurrentPage() {
     const currentUrl = window.location.href.split('#')[0];
     chrome.storage.local.get(['floating_notes'], (res) => {
-      const notes = res.floating_notes || [];
-      const pageNotes = notes.filter(n => n.url === currentUrl);
-
-      pageNotes.forEach(noteData => {
-        if (!this.notes.has(noteData.id)) {
-          this.createNoteCard(noteData);
-        }
+      const notes = (res.floating_notes || []).filter(n => n.url === currentUrl);
+      notes.forEach(noteData => {
+        if (!this.notes.has(noteData.id)) this.createNoteCard(noteData);
       });
     });
+  }
+
+  setTheme(theme) {
+    if (theme === 'system') {
+      this.container.removeAttribute('data-theme');
+    } else {
+      this.container.setAttribute('data-theme', theme);
+    }
   }
 
   scrollToNote(id) {
@@ -699,17 +821,13 @@ class FloatingUI {
     if (note) {
       this.closeAllPopups();
       note.element.classList.add('open');
-
       const marker = note.element.querySelector('.custom-red-marker');
       if (marker) {
-        marker.style.transform = 'scale(1.5)';
-        setTimeout(() => marker.style.transform = '', 300);
+        marker.style.transform = 'scale(1.4)';
+        setTimeout(() => marker.style.transform = '', 350);
       }
-
       const anchorEl = window.FlashNoteAnchor.findElementByAnchor(note.data.anchor);
-      if (anchorEl) {
-        anchorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+      if (anchorEl) anchorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
 }

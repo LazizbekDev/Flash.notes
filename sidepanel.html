@@ -1,386 +1,685 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Flash Note</title>
-    <style>
-      :root {
-        color-scheme: light dark;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        --radius-sm: 8px;
-        --radius-md: 12px;
-        --radius-lg: 16px;
-        --radius-full: 9999px;
-        --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-      body {
-        margin: 0;
-        padding: 16px;
-        background: var(--bg);
-        color: var(--text);
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        min-height: 100vh;
-      }
-      body[data-theme='light'] {
-        --bg: #f9fafb;
-        --text: #111827;
-        --text-muted: #6b7280;
-        --card: #ffffff;
-        --border: #e5e7eb;
-        --accent: #3b82f6;
-        --accent-hover: #2563eb;
-        --danger: #ef4444;
-        --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-      }
-      body[data-theme='dark'] {
-        --bg: #111827;
-        --text: #f9fafb;
-        --text-muted: #9ca3af;
-        --card: #1f2937;
-        --border: #374151;
-        --accent: #60a5fa;
-        --accent-hover: #3b82f6;
-        --danger: #ef4444;
-        --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
-      }
-      header {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-      h1 {
-        font-size: 24px;
-        font-weight: 700;
-        margin: 0;
-        letter-spacing: -0.02em;
-      }
-      p {
-        margin: 0;
-        color: var(--text-muted);
-        font-size: 14px;
-      }
-      
-      /* Floating Controls */
-      .floating-controls {
-        display: flex;
-        gap: 8px;
-      }
-      .btn-primary {
-        flex: 1;
-        padding: 12px;
-        background: var(--accent);
-        color: white;
-        font-weight: 600;
-        font-size: 15px;
-        border: none;
-        border-radius: var(--radius-md);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        cursor: pointer;
-        transition: var(--transition);
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-      }
-      .btn-primary:hover {
-        background: var(--accent-hover);
-        transform: translateY(-1px);
-      }
-      .btn-icon {
-        width: 44px;
-        height: 44px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        cursor: pointer;
-        transition: var(--transition);
-        color: var(--text);
-      }
-      .btn-icon:hover {
-        background: var(--border);
-      }
 
-      /* Note Form */
-      #note-form {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        padding: 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        box-shadow: var(--shadow);
-      }
-      #note-form label {
-        font-size: 14px;
-        font-weight: 600;
-      }
-      textarea {
-        width: 100%;
-        min-height: 80px;
-        padding: 12px;
-        border-radius: var(--radius-sm);
-        border: 1px solid var(--border);
-        background: var(--bg);
-        color: var(--text);
-        font-family: inherit;
-        font-size: 14px;
-        resize: vertical;
-        box-sizing: border-box;
-        transition: border-color 0.2s;
-      }
-      textarea:focus {
-        outline: none;
-        border-color: var(--accent);
-      }
-      .form-actions {
-        display: flex;
-        justify-content: flex-end;
-      }
-      .btn-save {
-        padding: 8px 16px;
-        background: var(--accent);
-        color: white;
-        border: none;
-        border-radius: var(--radius-full);
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: var(--transition);
-      }
-      .btn-save:hover {
-        background: var(--accent-hover);
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flash Note</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=DM+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet" />
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-      /* Toolbar & Filters */
-      .toolbar {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-      .search-box {
-        position: relative;
-      }
-      .search-box input {
-        width: 100%;
-        padding: 10px 16px 10px 36px;
-        border-radius: var(--radius-full);
-        border: 1px solid var(--border);
-        background: var(--card);
-        color: var(--text);
-        font-family: inherit;
-        font-size: 14px;
-        box-sizing: border-box;
-      }
-      .search-box input:focus {
-        outline: none;
-        border-color: var(--accent);
-      }
-      .search-icon {
-        position: absolute;
-        left: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--text-muted);
-        width: 16px;
-        height: 16px;
-      }
-      
-      .filters-row {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-      .filter-select, .date-input {
-        padding: 8px 12px;
-        border-radius: var(--radius-sm);
-        border: 1px solid var(--border);
-        background: var(--card);
-        color: var(--text);
-        font-size: 13px;
-        font-family: inherit;
-        outline: none;
-        cursor: pointer;
-      }
-      .date-input {
-        flex: 1;
-        min-width: 110px;
-      }
-      
-      /* Tabs */
-      .tabs {
-        display: flex;
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        padding: 4px;
-        gap: 4px;
-      }
-      .tab-btn {
-        flex: 1;
-        padding: 8px;
-        background: transparent;
-        border: none;
-        border-radius: var(--radius-sm);
-        color: var(--text-muted);
-        font-size: 13px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: var(--transition);
-      }
-      .tab-btn:hover {
-        color: var(--text);
-      }
-      .tab-btn.active {
-        background: var(--bg);
-        color: var(--text);
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-      }
+    :root {
+      --bg: #F5F2ED;
+      --surface: #FFFEFB;
+      --surface2: #F0EDE8;
+      --ink: #1C1917;
+      --ink2: #57534E;
+      --ink3: #A8A29E;
+      --border: #E7E3DC;
+      --border2: #D6D0C8;
+      --amber: #D97706;
+      --amber-bg: #FEF3C7;
+      --amber-dim: #92400E;
+      --danger: #DC2626;
+      --danger-bg: #FEE2E2;
+      --r: 6px;
+      --r2: 10px;
+      --mono: 'DM Mono', monospace;
+      --sans: 'DM Sans', sans-serif;
+    }
 
-      /* Notes List */
-      #notes-list {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
+    /* Support both system and manual dark mode */
+    @media (prefers-color-scheme: dark) {
+      :root:not(.light) {
+        --bg: #09090B;
+        --surface: #18181B;
+        --surface2: #27272A;
+        --ink: #FAFAFA;
+        --ink2: #D4D4D8;
+        --ink3: #71717A;
+        --border: #27272A;
+        --border2: #3F3F46;
+        --amber: #F59E0B;
+        --amber-bg: #451A03;
+        --amber-dim: #FCD34D;
+        --danger: #EF4444;
+        --danger-bg: #450A0A;
       }
-      .note-item {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        padding: 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        box-shadow: var(--shadow);
-        transition: var(--transition);
-      }
-      .note-item:hover {
-        border-color: #cbd5e1;
-      }
-      body[data-theme='dark'] .note-item:hover {
-        border-color: #4b5563;
-      }
-      .floating-note-item {
-        border-left: 4px solid var(--accent);
-      }
-      
-      .note-content {
-        font-size: 14px;
-        line-height: 1.5;
-        word-break: break-word;
-      }
-      
-      .note-meta {
-        font-size: 12px;
-        color: var(--text-muted);
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        align-items: center;
-      }
-      .badge {
-        padding: 2px 6px;
-        border-radius: 4px;
-        background: var(--bg);
-        border: 1px solid var(--border);
-        font-size: 11px;
-      }
-      
-      .note-actions {
-        display: flex;
-        gap: 8px;
-        border-top: 1px dashed var(--border);
-        padding-top: 12px;
-        margin-top: 4px;
-      }
-      .btn-ghost {
-        background: transparent;
-        color: var(--text-muted);
-        border: none;
-        font-size: 13px;
-        font-weight: 500;
-        cursor: pointer;
-        padding: 4px 8px;
-        border-radius: var(--radius-sm);
-        transition: var(--transition);
-      }
-      .btn-ghost:hover {
-        background: var(--bg);
-        color: var(--text);
-      }
-      .btn-danger {
-        color: var(--danger);
-        margin-left: auto;
-      }
-      .btn-danger:hover {
-        background: rgba(239, 68, 68, 0.1);
-      }
+    }
 
-      .empty-state {
-        text-align: center;
-        padding: 40px 20px;
-        color: var(--text-muted);
-        background: var(--card);
-        border: 1px dashed var(--border);
-        border-radius: var(--radius-md);
-        font-size: 14px;
-      }
-    </style>
-  </head>
-  <body>
-    <header>
-      <h1>Flash Note</h1>
-      <p>Quick notes, highlights & floating comments</p>
+    :root.dark {
+      --bg: #09090B;
+      --surface: #18181B;
+      --surface2: #27272A;
+      --ink: #FAFAFA;
+      --ink2: #D4D4D8;
+      --ink3: #71717A;
+      --border: #27272A;
+      --border2: #3F3F46;
+      --amber: #F59E0B;
+      --amber-bg: #451A03;
+      --amber-dim: #FCD34D;
+      --danger: #EF4444;
+      --danger-bg: #450A0A;
+    }
+
+    html,
+    body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.5;
+      overflow: hidden;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* ── LAYOUT ── */
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    .hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo-mark {
+      width: 26px;
+      height: 26px;
+      background: var(--ink);
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .logo-mark svg {
+      stroke: var(--surface);
+      fill: none;
+    }
+
+    .logo-name {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--ink);
+    }
+
+    .logo-name span {
+      color: var(--amber);
+    }
+
+    .hdr-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .icon-btn {
+      width: 30px;
+      height: 30px;
+      background: transparent;
+      border: 1px solid var(--border2);
+      border-radius: var(--r);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--ink2);
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .icon-btn:hover {
+      background: var(--surface2);
+      color: var(--ink);
+    }
+
+    .icon-btn.active {
+      background: var(--amber);
+      border-color: var(--amber);
+      color: white;
+    }
+
+    /* ── COMPOSE ── */
+    .compose {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .compose-inner {
+      border: 1px solid var(--border2);
+      border-radius: var(--r2);
+      overflow: hidden;
+      background: var(--bg);
+      transition: border-color 0.2s;
+    }
+
+    .compose-inner:focus-within {
+      border-color: var(--ink);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 72px;
+      padding: 10px 12px 8px;
+      background: transparent;
+      border: none;
+      resize: none;
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--ink);
+      line-height: 1.6;
+      outline: none;
+    }
+
+    textarea::placeholder {
+      color: var(--ink3);
+      font-style: italic;
+    }
+
+    .compose-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .compose-tags {
+      display: flex;
+      gap: 4px;
+    }
+
+    .tag-pill {
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-family: var(--mono);
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+      background: var(--surface2);
+      color: var(--ink2);
+      border-color: var(--border);
+    }
+
+    .tag-pill:hover {
+      background: var(--ink);
+      color: var(--surface);
+      border-color: var(--ink);
+    }
+
+    .tag-pill.sel-note {
+      background: var(--ink);
+      color: var(--surface);
+      border-color: var(--ink);
+    }
+
+    .tag-pill.sel-highlight {
+      background: var(--amber);
+      color: #fff;
+      border-color: var(--amber);
+    }
+
+    .tag-pill.sel-float {
+      background: var(--ink);
+      color: #FEF3C7;
+      border-color: var(--ink);
+    }
+
+    .save-btn {
+      padding: 6px 14px;
+      background: var(--ink);
+      color: var(--surface);
+      border: none;
+      border-radius: var(--r);
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: opacity 0.15s;
+    }
+
+    .save-btn:hover {
+      opacity: 0.82;
+    }
+
+    /* ── TOOLBAR ── */
+    .toolbar {
+      padding: 10px 16px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .search-wrap {
+      flex: 1;
+      position: relative;
+    }
+
+    .search-wrap svg {
+      position: absolute;
+      left: 9px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      stroke: var(--ink3);
+      fill: none;
+      pointer-events: none;
+    }
+
+    .search-wrap input {
+      width: 100%;
+      padding: 7px 10px 7px 28px;
+      border: 1px solid var(--border2);
+      border-radius: var(--r);
+      background: var(--bg);
+      color: var(--ink);
+      font-size: 13px;
+      font-family: var(--sans);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-wrap input:focus {
+      border-color: var(--ink);
+    }
+
+    .search-wrap input::placeholder {
+      color: var(--ink3);
+    }
+
+    .tab-group {
+      display: flex;
+      gap: 2px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 2px;
+      flex-shrink: 0;
+    }
+
+    .tab {
+      padding: 4px 10px;
+      border: none;
+      background: transparent;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: var(--sans);
+      font-weight: 500;
+      color: var(--ink2);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .tab.active {
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    }
+
+    /* ── NOTES LIST ── */
+    .notes-wrap {
+      flex: 1;
+      overflow-y: auto;
+      background: var(--bg);
+    }
+
+    .notes-wrap::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .notes-wrap::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .notes-wrap::-webkit-scrollbar-thumb {
+      background: var(--border2);
+      border-radius: 2px;
+    }
+
+    .notes-wrap::-webkit-scrollbar-thumb:hover {
+      background: var(--ink3);
+    }
+
+    .notes {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .note-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      transition: background 0.12s;
+      position: relative;
+    }
+
+    .note-item:last-child {
+      border-bottom: none;
+    }
+
+    .note-item:hover {
+      background: var(--surface2);
+    }
+
+    .note-item.highlight-type {
+      border-left: 3px solid var(--amber);
+      padding-left: 13px;
+    }
+
+    .note-item.float-type {
+      border-left: 3px solid var(--ink3);
+      padding-left: 13px;
+    }
+
+    .note-text {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--ink);
+      line-height: 1.6;
+      word-break: break-word;
+      margin-bottom: 7px;
+    }
+
+    .note-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .note-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .type-badge {
+      font-size: 10px;
+      font-family: var(--mono);
+      font-weight: 500;
+      padding: 1px 6px;
+      border-radius: 3px;
+      letter-spacing: 0.04em;
+    }
+
+    .type-badge.note {
+      background: var(--surface2);
+      color: var(--ink3);
+      border: 1px solid var(--border);
+    }
+
+    .type-badge.highlight {
+      background: var(--amber-bg);
+      color: var(--amber-dim);
+    }
+
+    .type-badge.float {
+      background: var(--ink);
+      color: var(--surface);
+    }
+
+    .note-date {
+      font-size: 11px;
+      font-family: var(--mono);
+      color: var(--ink3);
+    }
+
+    .note-acts {
+      display: flex;
+      gap: 2px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .note-item:hover .note-acts {
+      opacity: 1;
+    }
+
+    .act-btn {
+      width: 24px;
+      height: 24px;
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--ink3);
+      transition: all 0.12s;
+    }
+
+    .act-btn:hover {
+      background: var(--border);
+      color: var(--ink);
+    }
+
+    .act-btn.del:hover {
+      background: var(--danger-bg);
+      color: var(--danger);
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 56px 24px;
+      gap: 10px;
+      color: var(--ink3);
+    }
+
+    .empty svg {
+      width: 36px;
+      height: 36px;
+      stroke: var(--border2);
+      fill: none;
+    }
+
+    .empty p {
+      font-size: 13px;
+      font-family: var(--mono);
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    /* ── FOOTER ── */
+    .ftr {
+      padding: 8px 16px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .ftr-count {
+      font-size: 11px;
+      font-family: var(--mono);
+      color: var(--ink3);
+    }
+
+    .sort-sel {
+      font-size: 11px;
+      font-family: var(--mono);
+      color: var(--ink2);
+      background: transparent;
+      border: none;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 48px;
+      left: 50%;
+      transform: translateX(-50%) translateY(8px);
+      background: var(--ink);
+      color: var(--surface);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="app">
+
+    <!-- HEADER -->
+    <header class="hdr">
+      <div class="logo">
+        <div class="logo-mark">
+          <svg width="14" height="14" viewBox="0 0 14 14" stroke-width="1.8" stroke-linecap="round"
+            stroke-linejoin="round">
+            <line x1="2" y1="3.5" x2="12" y2="3.5" />
+            <line x1="2" y1="7" x2="9" y2="7" />
+            <line x1="2" y1="10.5" x2="6.5" y2="10.5" />
+            <circle cx="11" cy="10.5" r="2" />
+            <line x1="11" y1="9.5" x2="11" y2="11.5" />
+            <line x1="10" y1="10.5" x2="12" y2="10.5" />
+          </svg>
+        </div>
+        <span class="logo-name">flash<span>.</span>note</span>
+      </div>
+      <div class="hdr-actions">
+        <button class="icon-btn" id="themeBtn" title="Switch Theme">
+          <svg class="sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" style="display:none">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg class="moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+        <button class="icon-btn" id="addFloatingBtn" title="Add Floating Note (Comment)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            <line x1="12" y1="8" x2="12" y2="16"></line>
+            <line x1="8" y1="12" x2="16" y2="12"></line>
+          </svg>
+        </button>
+        <button class="icon-btn" id="toggleFloatBtn" title="Toggle floating notes visibility">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </button>
+      </div>
     </header>
 
-    <section class="floating-controls">
-      <button id="add-floating-note" class="btn-primary">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-        Add Floating Note
-      </button>
-      <button id="toggle-floating-notes" class="btn-icon" title="Toggle Visibility">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-      </button>
+    <!-- COMPOSE -->
+    <section class="compose">
+      <div class="compose-inner">
+        <textarea id="noteText" placeholder="capture a thought…" rows="3"></textarea>
+        <div class="compose-footer">
+          <div class="compose-tags" id="tagGroup">
+            <button class="tag-pill sel-note" data-type="note">note</button>
+            <button class="tag-pill" data-type="highlight">highlight</button>
+            <button class="tag-pill" data-type="float">floating</button>
+          </div>
+          <button class="save-btn" id="saveBtn">save →</button>
+        </div>
+      </div>
     </section>
 
-    <form id="note-form">
-      <label for="note-text">Quick Note</label>
-      <textarea id="note-text" placeholder="Type your thought..." required></textarea>
-      <div class="form-actions">
-        <button type="submit" class="btn-save">Save note</button>
-      </div>
-    </form>
-
+    <!-- TOOLBAR -->
     <section class="toolbar">
-      <div class="search-box">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input id="note-search" type="search" placeholder="Search notes..." autocomplete="off" />
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input type="search" id="searchInput" placeholder="search notes…" autocomplete="off" />
       </div>
-      
-      <div class="tabs">
-        <button class="tab-btn active" data-tab="all">All</button>
-        <button class="tab-btn" data-tab="comments">Comments</button>
-        <button class="tab-btn" data-tab="highlights">Highlights</button>
-      </div>
-
-      <div class="filters-row">
-        <select id="sort-by" class="filter-select">
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
-        </select>
-        <input type="date" id="date-start" class="date-input" title="From date" />
-        <input type="date" id="date-end" class="date-input" title="To date" />
+      <div class="tab-group" id="tabGroup">
+        <button class="tab active" data-tab="all">all</button>
+        <button class="tab" data-tab="highlight">hl</button>
+        <button class="tab" data-tab="float">float</button>
       </div>
     </section>
 
-    <section id="notes-list"></section>
+    <!-- NOTES LIST -->
+    <div class="notes-wrap">
+      <div class="notes" id="notesList"></div>
+    </div>
 
-    <script type="module" src="flashnote.js"></script>
-  </body>
+    <!-- FOOTER -->
+    <footer class="ftr">
+      <span class="ftr-count" id="noteCount">0 notes</span>
+      <select class="sort-sel" id="sortSel">
+        <option value="newest">newest first</option>
+        <option value="oldest">oldest first</option>
+      </select>
+    </footer>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="sidepanel.js"></script>
+</body>
+
 </html>

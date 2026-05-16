@@ -58,18 +58,38 @@ const initFloatingComments = () => {
   
   floatingUI = new window.FlashNoteFloatingUI();
   floatingUI.loadNotesForCurrentPage();
+
+  // Check for auto-scroll request from sidepanel
+  chrome.storage.local.get(['pending_scroll_id'], (res) => {
+    if (res.pending_scroll_id) {
+      // Short delay to ensure markers are placed
+      setTimeout(() => {
+        floatingUI.scrollToNote(res.pending_scroll_id);
+        chrome.storage.local.remove('pending_scroll_id');
+      }, 800);
+    }
+  });
   
   // Listen for messages from background/sidepanel
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'enter-add-note-mode') {
       enterAddNoteMode();
+    } else if (message.type === 'exit-add-note-mode') {
+      exitAddNoteMode();
     } else if (message.type === 'scroll-to-floating-note') {
       floatingUI.scrollToNote(message.id);
     } else if (message.type === 'toggle-floating-notes') {
       floatingUI.container.classList.toggle('hidden');
     } else if (message.type === 'floating-note-deleted-from-sidebar') {
       floatingUI.deleteNote(message.id);
+    } else if (message.type === 'theme-changed') {
+      floatingUI.setTheme(message.theme);
     }
+  });
+
+  // Sync initial theme
+  chrome.storage.sync.get(['theme'], (res) => {
+    if (res.theme) floatingUI.setTheme(res.theme);
   });
 };
 
@@ -82,19 +102,19 @@ const enterAddNoteMode = () => {
   
   // Create dim screen overlay
   const dimOverlay = document.createElement('div');
-  dimOverlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.3); z-index: 2147483645; pointer-events: none; transition: background 0.2s;';
+  dimOverlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.45); z-index: 2147483645; pointer-events: none; transition: background 0.3s;';
   document.body.appendChild(dimOverlay);
 
   // Create highlighter element
   crosshairOverlay = document.createElement('div');
-  crosshairOverlay.style.cssText = 'position: fixed; pointer-events: none; z-index: 2147483646; border: 2px solid #8b5cf6; background: rgba(139, 92, 246, 0.08); transition: all 0.1s ease-out; display: none; border-radius: 4px; box-sizing: border-box;';
+  crosshairOverlay.style.cssText = 'position: fixed; pointer-events: none; z-index: 2147483646; border: 2px solid #D97706; background: rgba(217, 119, 6, 0.1); transition: all 0.08s ease-out; display: none; border-radius: 6px; box-sizing: border-box; box-shadow: 0 0 20px rgba(217, 119, 6, 0.2);';
   
   // Attach dimOverlay to crosshair for cleanup
   crosshairOverlay._dimOverlay = dimOverlay;
 
   // Create a tooltip for the tag info
   const tooltip = document.createElement('div');
-  tooltip.style.cssText = 'position: absolute; bottom: 100%; left: -2px; margin-bottom: 4px; background: #8b5cf6; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-family: monospace; white-space: nowrap; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);';
+  tooltip.style.cssText = 'position: absolute; bottom: 100%; left: -2px; margin-bottom: 6px; background: #D97706; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-family: "DM Mono", monospace; white-space: nowrap; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15); text-transform: lowercase; letter-spacing: 0.05em;';
   crosshairOverlay.appendChild(tooltip);
   document.body.appendChild(crosshairOverlay);
 
@@ -115,7 +135,7 @@ const enterAddNoteMode = () => {
       if (targetElement.id) tagInfo += '#' + targetElement.id;
       else if (targetElement.className && typeof targetElement.className === 'string') {
         const firstClass = targetElement.className.split(' ')[0];
-        if (firstClass) tagInfo += '.' + firstClass;
+        if (firstClass && !firstClass.includes('flash-note')) tagInfo += '.' + firstClass;
       }
       tooltip.textContent = tagInfo;
     } else {
@@ -130,7 +150,6 @@ const enterAddNoteMode = () => {
     crosshairOverlay.style.display = 'none';
     let targetElement = document.elementFromPoint(e.clientX, e.clientY);
     if (targetElement === dimOverlay) {
-        // Find what's under the dim overlay by temporarily hiding it
         dimOverlay.style.display = 'none';
         targetElement = document.elementFromPoint(e.clientX, e.clientY);
         dimOverlay.style.display = 'block';
@@ -162,17 +181,16 @@ const enterAddNoteMode = () => {
     }
   };
 
-  // Use capture phase to intercept all events
   document.addEventListener('mousemove', onMouseMove, true);
   document.addEventListener('click', onClick, true);
   document.addEventListener('keydown', onKeyDown, true);
 
-  // Store cleanup function
   crosshairOverlay._cleanup = () => {
     document.removeEventListener('mousemove', onMouseMove, true);
     document.removeEventListener('click', onClick, true);
     document.removeEventListener('keydown', onKeyDown, true);
     document.body.style.removeProperty('cursor');
+    chrome.runtime.sendMessage({ type: 'add-note-mode-exited' });
   };
 };
 
@@ -189,3 +207,18 @@ const exitAddNoteMode = () => {
 
 // Initialize after a short delay to ensure DOM is ready
 setTimeout(initFloatingComments, 500);
+
+let ticking = false;
+window.addEventListener('scroll', () => {
+  if (!ticking && floatingUI) {
+    window.requestAnimationFrame(() => {
+      floatingUI.updateAllPositions();
+      ticking = false;
+    });
+    ticking = true;
+  }
+}, { passive: true });
+
+window.addEventListener('resize', () => {
+  if (floatingUI) floatingUI.updateAllPositions();
+});

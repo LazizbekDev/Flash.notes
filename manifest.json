@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Flash Note",
-  "version": "1.4.0",
+  "version": "2.0.0",
   "description": "Sidebar notes • Highlight → Telegram sync • Reminders",
   "icons": { "128": "icons/icon128.png" },
   "permissions": [
@@ -11,7 +11,8 @@
     "notifications",
     "activeTab",
     "scripting",
-    "contextMenus"
+    "contextMenus",
+    "unlimitedStorage"
   ],
   "side_panel": { "default_path": "sidepanel.html" },
   "action": { "default_title": "Flash Note" },
