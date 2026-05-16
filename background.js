@@ -1,15 +1,6 @@
 const STORAGE_KEY = 'notes';
 const FLOATING_STORAGE_KEY = 'floating_notes';
 
-const safeChromeCall = async (executor) => {
-  try {
-    return await executor();
-  } catch (error) {
-    console.error('[FlashNote][chrome]', error);
-    throw error;
-  }
-};
-
 const getStorage = (area, keys) =>
   new Promise((resolve) => {
     chrome.storage[area].get(keys, (res) => {
@@ -22,31 +13,31 @@ const getStorage = (area, keys) =>
     });
   });
 
-const pushHighlightNote = async (text) => {
+const pushHighlightNote = async (text, html) => {
   if (!text?.trim()) return;
 
-  const res = await getStorage('sync', [STORAGE_KEY]);
+  // Use LOCAL storage to avoid quota limits
+  const res = await getStorage('local', [STORAGE_KEY]);
   const notes = res[STORAGE_KEY] || [];
 
   const newNote = {
     id: crypto.randomUUID(),
     text: text.trim(),
+    html: html, // Store rich text
     createdAt: Date.now(),
     source: 'highlight',
     type: 'note'
   };
 
   const updatedNotes = [newNote, ...notes];
-  await chrome.storage.sync.set({ [STORAGE_KEY]: updatedNotes });
+  await chrome.storage.local.set({ [STORAGE_KEY]: updatedNotes });
 
-  chrome.runtime.sendMessage({ type: 'note-added', note: newNote }, () => {
-    const err = chrome.runtime.lastError;
-  });
+  chrome.runtime.sendMessage({ type: 'note-added', note: newNote }).catch(() => {});
 };
 
 chrome.runtime.onMessage.addListener((message) => {
   if (message?.type === 'highlight') {
-    pushHighlightNote(message.text).catch(console.error);
+    pushHighlightNote(message.text, message.html).catch(console.error);
   }
 });
 
@@ -55,41 +46,31 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     const noteId = alarm?.name;
     if (!noteId) return;
 
-    // Check Sync Storage first (manual/highlights)
-    const resSync = await getStorage('sync', [STORAGE_KEY]);
-    let notes = resSync[STORAGE_KEY] || [];
-    let note = notes.find(n => n.id === noteId);
-    chrome.storage.local.get(['notes', 'floating_notes'], (res) => {
-      const allNotes = [...(res.notes || []), ...(res.floating_notes || [])];
-      const note = allNotes.find(n => n.id === alarm.name);
+    // Both manual and floating notes are now in local storage
+    const res = await getStorage('local', [STORAGE_KEY, FLOATING_STORAGE_KEY]);
+    const allNotes = [...(res[STORAGE_KEY] || []), ...(res[FLOATING_STORAGE_KEY] || [])];
+    const note = allNotes.find(n => n.id === noteId);
 
-      if (note) {
-        chrome.notifications.create(note.id, {
-          type: 'basic',
-          iconUrl: 'icons/icon128.png',
-          title: 'Flash Note Reminder',
-          message: note.text || note.content || 'Time to check your note!',
-          priority: 2
-        });
+    if (note) {
+      chrome.notifications.create(note.id, {
+        type: 'basic',
+        iconUrl: 'icons/icon128.png',
+        title: 'Flash Note Reminder',
+        message: (note.text || note.content || 'Time to check your note!').slice(0, 120),
+        priority: 2
+      });
 
-        // Mark reminder as triggered/removed in UI
-        if (note.anchor) {
-          // It's a floating note
-          const idx = res.floating_notes.findIndex(n => n.id === alarm.name);
-          if (idx >= 0) {
-            delete res.floating_notes[idx].reminderAt;
-            chrome.storage.local.set({ floating_notes: res.floating_notes });
-          }
-        } else {
-          // It's a manual note
-          const idx = res.notes.findIndex(n => n.id === alarm.name);
-          if (idx >= 0) {
-            delete res.notes[idx].reminderAt;
-            chrome.storage.local.set({ notes: res.notes });
-          }
-        }
+      // Clear reminderAt in storage
+      if (note.anchor) {
+        // Floating note
+        const updated = (res[FLOATING_STORAGE_KEY] || []).map(n => n.id === noteId ? { ...n, reminderAt: null } : n);
+        await chrome.storage.local.set({ [FLOATING_STORAGE_KEY]: updated });
+      } else {
+        // Manual note
+        const updated = (res[STORAGE_KEY] || []).map(n => n.id === noteId ? { ...n, reminderAt: null } : n);
+        await chrome.storage.local.set({ [STORAGE_KEY]: updated });
       }
-    });
+    }
   } catch (error) {
     console.error('[FlashNote][alarm]', error);
   }

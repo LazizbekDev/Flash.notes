@@ -41,10 +41,8 @@ async function migrateFromSync() {
   return new Promise((resolve) => {
     chrome.storage.sync.get([STORAGE_KEY], (res) => {
       if (res[STORAGE_KEY] && res[STORAGE_KEY].length > 0) {
-        // Move to local
         chrome.storage.local.get([STORAGE_KEY], (localRes) => {
           const localNotes = localRes[STORAGE_KEY] || [];
-          // Combine if needed or just replace if local is empty
           if (localNotes.length === 0) {
             chrome.storage.local.set({ [STORAGE_KEY]: res[STORAGE_KEY] }, () => {
               chrome.storage.sync.remove([STORAGE_KEY]);
@@ -63,7 +61,6 @@ async function migrateFromSync() {
 
 async function hydrate() {
   return new Promise((resolve) => {
-    // Both now come from local to avoid quota limits
     chrome.storage.local.get([STORAGE_KEY, FLOATING_STORAGE_KEY], (res) => {
       state.notes = res[STORAGE_KEY] || [];
       state.floatingNotes = res[FLOATING_STORAGE_KEY] || [];
@@ -102,7 +99,6 @@ function applyTheme() {
 }
 
 function registerListeners() {
-  // Theme Switcher
   elements.themeBtn.addEventListener('click', () => {
     if (state.theme === 'light') state.theme = 'dark';
     else if (state.theme === 'dark') state.theme = 'system';
@@ -113,7 +109,6 @@ function registerListeners() {
     showToast(`Theme: ${state.theme}`);
   });
 
-  // Add Floating Note Button (Header)
   elements.addFloatingBtn.addEventListener('click', () => {
     const isActive = elements.addFloatingBtn.classList.contains('active');
     if (isActive) {
@@ -132,7 +127,6 @@ function registerListeners() {
     }
   });
 
-  // Tag Selection
   elements.tagGroup.addEventListener('click', e => {
     const btn = e.target.closest('.tag-pill');
     if (!btn) return;
@@ -143,7 +137,6 @@ function registerListeners() {
     });
   });
 
-  // Tab Selection
   elements.tabGroup.addEventListener('click', e => {
     const btn = e.target.closest('.tab');
     if (!btn) return;
@@ -153,7 +146,6 @@ function registerListeners() {
     renderNotes();
   });
 
-  // Save Note
   elements.saveBtn.addEventListener('click', handleSave);
   elements.noteText.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') handleSave();
@@ -164,7 +156,6 @@ function registerListeners() {
     this.style.height = this.scrollHeight + 'px';
   });
 
-  // Toggle Floating
   elements.toggleFloatBtn.addEventListener('click', () => {
     state.showFloating = !state.showFloating;
     elements.toggleFloatBtn.classList.toggle('active', !state.showFloating);
@@ -174,7 +165,6 @@ function registerListeners() {
     renderNotes();
   });
 
-  // Sort & Search
   elements.sortSel.addEventListener('change', (e) => {
     state.sortOrder = e.target.value;
     renderNotes();
@@ -184,7 +174,6 @@ function registerListeners() {
     renderNotes();
   });
 
-  // External Messages
   chrome.runtime.onMessage.addListener((message) => {
     if (message.type === 'note-added') {
       state.notes.unshift(message.note);
@@ -223,7 +212,8 @@ async function handleSave() {
     text: text,
     createdAt: Date.now(),
     source: state.selectedType === 'highlight' ? 'highlight' : 'manual',
-    type: 'note'
+    type: 'note',
+    pinned: false
   };
 
   state.notes.unshift(newNote);
@@ -248,6 +238,24 @@ async function deleteNote(id, isFloating) {
   chrome.alarms.clear(id);
   renderNotes();
   showToast('Deleted.');
+}
+
+async function togglePin(id, isFloating) {
+  if (isFloating) {
+    const idx = state.floatingNotes.findIndex(n => n.id === id);
+    if (idx >= 0) {
+      state.floatingNotes[idx].pinned = !state.floatingNotes[idx].pinned;
+      await chrome.storage.local.set({ [FLOATING_STORAGE_KEY]: state.floatingNotes });
+    }
+  } else {
+    const idx = state.notes.findIndex(n => n.id === id);
+    if (idx >= 0) {
+      state.notes[idx].pinned = !state.notes[idx].pinned;
+      await chrome.storage.local.set({ [STORAGE_KEY]: state.notes });
+    }
+  }
+  renderNotes();
+  showToast('Note pinned/unpinned.');
 }
 
 async function scheduleReminder(id, isFloating, dateStr) {
@@ -284,6 +292,21 @@ function copyNote(text) {
   }
 }
 
+async function copyRichText(text, html) {
+  if (!html) return copyNote(text);
+  
+  try {
+    const blobHtml = new Blob([html], { type: 'text/html' });
+    const blobText = new Blob([text], { type: 'text/plain' });
+    const data = [new ClipboardItem({ 'text/html': blobHtml, 'text/plain': blobText })];
+    await navigator.clipboard.write(data);
+    showToast('Copied with formatting.');
+  } catch (err) {
+    console.error('Failed to copy rich text:', err);
+    copyNote(text);
+  }
+}
+
 function jumpToFloatingNote(id) {
   const note = state.floatingNotes.find(n => n.id === id);
   if (!note) return;
@@ -317,7 +340,9 @@ function renderNotes() {
       ...state.floatingNotes.map(n => ({ ...n, _isFloating: true }))
     ];
   } else if (state.activeTab === 'highlight') {
-    data = state.notes.map(n => ({ ...n, _isFloating: false }));
+    data = state.notes.filter(n => n.source === 'highlight').map(n => ({ ...n, _isFloating: false }));
+  } else if (state.activeTab === 'note') {
+    data = state.notes.filter(n => n.source === 'manual').map(n => ({ ...n, _isFloating: false }));
   } else if (state.activeTab === 'float') {
     data = state.floatingNotes.map(n => ({ ...n, _isFloating: true }));
   }
@@ -326,7 +351,12 @@ function renderNotes() {
     data = data.filter(n => (n._isFloating ? n.content : n.text).toLowerCase().includes(q));
   }
 
-  data.sort((a, b) => state.sortOrder === 'newest' ? b.createdAt - a.createdAt : a.createdAt - b.createdAt);
+  data.sort((a, b) => {
+    if (a.pinned && !b.pinned) return -1;
+    if (!a.pinned && b.pinned) return 1;
+    return state.sortOrder === 'newest' ? b.createdAt - a.createdAt : a.createdAt - b.createdAt;
+  });
+
   elements.noteCount.textContent = `${data.length} ${data.length === 1 ? 'note' : 'notes'}`;
 
   if (!data.length) {
@@ -335,22 +365,39 @@ function renderNotes() {
   }
 
   list.innerHTML = data.map(n => {
-    const text = n._isFloating ? (n.content || '<em>Empty</em>') : n.text;
+    let textContent = '';
+    if (n._isFloating) {
+      textContent = n.content || '<em>Empty</em>';
+    } else if (n.source === 'highlight' && n.html) {
+      textContent = n.html; // Render rich text for highlights
+    } else {
+      textContent = esc(n.text);
+    }
+    
     const type = n._isFloating ? 'float' : (n.source === 'highlight' ? 'highlight' : 'note');
     return `
-    <div class="note-item ${type}-type" data-id="${n.id}" data-floating="${n._isFloating}">
-      <div class="note-text">${esc(text)}</div>
+    <div class="note-item ${type}-type ${n.pinned ? 'pinned' : ''}" data-id="${n.id}" data-floating="${n._isFloating}">
+      <div class="note-text">${textContent}</div>
       <div class="note-bottom">
         <div class="note-meta">
           <span class="type-badge ${type}">${type}</span>
           <span class="note-date">${fmtDate(n.createdAt)}</span>
           ${n.reminderAt ? `<span class="note-date" style="color:var(--amber)">🔔 ${new Date(n.reminderAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>` : ''}
           ${n._isFloating ? `<span class="note-date">· ${new URL(n.url).hostname}</span>` : ''}
+          ${n.pinned ? `<span class="note-date" style="color:var(--amber)">📌 pinned</span>` : ''}
         </div>
         <div class="note-acts">
-          ${n._isFloating ? `<button class="act-btn" title="Jump to" data-action="jump"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></button>` : ''}
-          <button class="act-btn" title="Set Reminder" data-action="remind"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>
-          <button class="act-btn" title="Copy" data-action="copy"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+          <button class="act-btn ${n.pinned ? 'active' : ''}" title="Pin Note" data-action="pin">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><path d="m7.5 4.27 9 5.15"/><path d="M12 22V12"/><path d="m12 12 8.5 4.9"/><path d="m12 12-8.5 4.9"/><path d="m4.67 7.04 8.83 5.1"/></svg>
+          </button>
+          ${n._isFloating ? `<button class="act-btn" title="Jump to" data-action="jump"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></button>` : ''}
+          <button class="act-btn" title="Set Reminder" data-action="remind"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>
+          ${n.source === 'highlight' ? `
+            <button class="act-btn" title="Copy with Formatting (Markup)" data-action="copy-markup">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </button>
+          ` : ''}
+          <button class="act-btn" title="Copy Plain Text" data-action="copy"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
           <button class="act-btn del" title="Delete" data-action="delete"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
         </div>
       </div>
@@ -402,8 +449,13 @@ elements.notesList.addEventListener('click', e => {
   if (action === 'copy') {
     const txt = isFloating ? state.floatingNotes.find(x => x.id === id)?.content : state.notes.find(x => x.id === id)?.text;
     if (txt) copyNote(txt);
+  } else if (action === 'copy-markup') {
+    const note = state.notes.find(x => x.id === id);
+    if (note) copyRichText(note.text, note.html);
   } else if (action === 'delete') {
     deleteNote(id, isFloating);
+  } else if (action === 'pin') {
+    togglePin(id, isFloating);
   } else if (action === 'jump') {
     jumpToFloatingNote(id);
   } else if (action === 'remind') {

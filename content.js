@@ -1,12 +1,10 @@
 // content.js - captures highlighted text and sends it to the extension
 
-const sendHighlight = (text) => {
-  if (!text?.trim()) {
-    return;
-  }
+const sendHighlight = (text, html) => {
+  if (!text?.trim()) return;
 
   try {
-    chrome.runtime.sendMessage({ type: 'highlight', text: text.trim() });
+    chrome.runtime.sendMessage({ type: 'highlight', text: text.trim(), html: html });
   } catch (error) {
     console.error('[FlashNote][highlight]', error);
   }
@@ -14,17 +12,18 @@ const sendHighlight = (text) => {
 
 const handleMouseUp = (e) => {
   try {
-    // Prevent capturing highlights if clicking inside the floating UI
     if (e && e.composedPath) {
       const path = e.composedPath();
-      if (path.some(el => el.id === 'flash-note-floating-container' || el === crosshairOverlay)) {
-        return;
-      }
+      if (path.some(el => el.id === 'flash-note-floating-container' || el === crosshairOverlay)) return;
     }
     
-    const selection = window.getSelection()?.toString();
-    if (selection && selection.trim().length > 2) {
-      sendHighlight(selection);
+    const selection = window.getSelection();
+    const text = selection.toString();
+    if (text && text.trim().length > 2) {
+      const range = selection.getRangeAt(0);
+      const container = document.createElement("div");
+      container.appendChild(range.cloneContents());
+      sendHighlight(text, container.innerHTML);
     }
   } catch (error) {
     console.error('[FlashNote][selection]', error);
@@ -34,9 +33,13 @@ const handleMouseUp = (e) => {
 const handleKeydown = (event) => {
   if (event.altKey && event.shiftKey && event.key.toLowerCase() === 'f') {
     try {
-      const selection = window.getSelection()?.toString();
-      if (selection?.trim()) {
-        sendHighlight(selection);
+      const selection = window.getSelection();
+      const text = selection.toString();
+      if (text?.trim()) {
+        const range = selection.getRangeAt(0);
+        const container = document.createElement("div");
+        container.appendChild(range.cloneContents());
+        sendHighlight(text, container.innerHTML);
       }
     } catch (error) {
       console.error('[FlashNote][shortcut]', error);
