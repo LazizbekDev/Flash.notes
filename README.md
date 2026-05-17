@@ -32,4 +32,3 @@ Flash Note is a Manifest V3 Chrome side panel extension built for instant note t
 
 - All data lives in `chrome.storage.sync`.
 - Icons should live under `icons/` at 16/48/128 px.
-
