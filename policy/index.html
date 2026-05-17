@@ -3,131 +3,109 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>FlashNote — Privacy Policy</title>
+  <title>Flash Note — Privacy Policy</title>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;line-height:1.6;color:#111;padding:24px;max-width:900px;margin:0 auto}
-    h1,h2{color:#0b3a66}
-    p{margin:12px 0}
-    small{color:#555}
-    code{background:#f4f4f4;padding:2px 6px;border-radius:4px}
-    .section{margin-bottom:20px}
-    a{color:#0b66d1;text-decoration:none}
-    .muted{color:#666;font-size:0.95rem}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;line-height:1.6;color:#1f2937;padding:32px 24px;max-width:800px;margin:0 auto;background:#f9fafb}
+    .card{background:#ffffff;padding:40px;border-radius:12px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05),0 2px 4px -1px rgba(0,0,0,0.03);border:1px solid #e5e7eb}
+    h1{color:#111827;font-size:2.25rem;font-weight:800;margin-top:0;margin-bottom:12px;letter-spacing:-0.025em}
+    h2{color:#1f2937;font-size:1.5rem;font-weight:700;margin-top:32px;margin-bottom:16px;border-bottom:1px solid #f3f4f6;padding-bottom:8px}
+    p{margin:12px 0;color:#4b5563}
+    ul{padding-left:24px;margin:12px 0;color:#4b5563}
+    li{margin-bottom:8px}
+    small{color:#6b7280}
+    code{background:#f3f4f6;padding:3px 6px;border-radius:6px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:0.875em;color:#111827}
+    .section{margin-bottom:28px}
+    a{color:#d97706;text-decoration:none;font-weight:500}
+    a:hover{text-decoration:underline}
+    .muted{color:#6b7280;font-size:0.95rem;margin-bottom:24px}
+    .badge{background:#fef3c7;color:#92400e;padding:4px 8px;border-radius:6px;font-size:0.875rem;font-weight:600;display:inline-block}
   </style>
 </head>
 <body>
-  <h1>FlashNote — Privacy Policy</h1>
-  <p class="muted">Last updated: <strong>November 28, 2025</strong></p>
+  <div class="card">
+    <h1>Flash Note — Privacy Policy</h1>
+    <p class="muted">Last updated: <strong>May 17, 2026</strong></p>
 
-  <div class="section">
-    <h2>Overview</h2>
-    <p>
-      FlashNote is a browser extension that provides a lightweight side-panel for taking notes, saving highlighted text from pages, and optionally syncing highlights to Telegram when a user connects their account. This policy explains what information FlashNote collects, how it is used, and the controls available to users.
-    </p>
+    <div class="section">
+      <span class="badge">100% Local & Secure</span>
+      <h2>Overview</h2>
+      <p>
+        Flash Note is a browser extension that provides a lightweight side-panel for taking notes, saving highlighted text from web pages, and pinning floating comments directly onto page elements. 
+      </p>
+      <p>
+        <strong>Your privacy is our absolute priority.</strong> Flash Note operates as a completely serverless extension. All your data stays entirely on your local machine, and no personal information is ever collected, monitored, or transmitted to any third-party servers.
+      </p>
+    </div>
+
+    <div class="section">
+      <h2>Data We Process & Store</h2>
+      <p>All data processed by Flash Note is stored locally in your browser's sandboxed storage and never leaves your device:</p>
+      <ul>
+        <li><strong>Notes & Highlights</strong> — When you type a manual note or capture highlighted text, the content is saved locally on your device.</li>
+        <li><strong>Floating Comments & Anchors</strong> — When you attach a floating note (comment) to a specific element on a webpage, we store the note content, the webpage URL, and non-personal element selectors (like class names or element IDs) locally so we can reposition the comment when you revisit that page.</li>
+        <li><strong>Reminders</strong> — When you set a reminder, the alarm timestamp is stored locally to trigger browser notifications.</li>
+      </ul>
+      <p class="muted"><em>In short: We only save what you explicitly write, and it is stored entirely offline.</em></p>
+    </div>
+
+    <div class="section">
+      <h2>How Data is Stored</h2>
+      <p>
+        By default, all your saved data is stored locally in your browser using <code>chrome.storage.local</code>. It is sandboxed within your browser profile. We do not use any external databases, servers, or cloud storage.
+      </p>
+    </div>
+
+    <div class="section">
+      <h2>What We Do NOT Do</h2>
+      <ul>
+        <li>We <strong>never</strong> collect, store, or transmit your personal data, passwords, or search queries.</li>
+        <li>We <strong>never</strong> sell, rent, or monetize your notes or browsing habits.</li>
+        <li>We <strong>never</strong> track your browsing history or record any background network traffic.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Permissions & Why We Request Them</h2>
+      <p>Flash Note requests only the minimum permissions necessary to function. None of these permissions are used for tracking or data collection:</p>
+      <ul>
+        <li><code>storage</code> & <code>unlimitedStorage</code> — Needed to save and persist your notes, settings, and floating comments offline on your device without hitting storage limits.</li>
+        <li><code>sidePanel</code> — Needed to display the notes management panel inside the browser's side panel.</li>
+        <li><code>contextMenus</code> — Needed to add a "Add Flash Note here" option to the right-click menu, allowing quick pinning of comments.</li>
+        <li><code>activeTab</code> & <code>scripting</code> — Needed to temporarily access page structures and place floating comments precisely on elements when you trigger the "Add Note" flow.</li>
+        <li><code>alarms</code> & <code>notifications</code> — Needed to schedule and trigger local reminders and push alert notifications.</li>
+        <li><code>host_permissions</code> (<code>*://*/*</code>) — Needed to allow you to pin floating comments on any website you browse.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>User Control & Data Retention</h2>
+      <p>
+        You have absolute control over your data:
+      </p>
+      <ul>
+        <li>You can modify or delete individual notes or floating comments at any time directly through the side panel UI.</li>
+        <li>To erase all data stored by the extension instantly, you can simply uninstall Flash Note from your browser. This will automatically delete all sandboxed browser storage associated with the extension.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Security</h2>
+      <p>
+        Because all your data is stored locally, its security depends entirely on your own device and browser settings. We recommend securing your operating system with regular updates, screen locks, and using standard browser protections.
+      </p>
+    </div>
+
+    <div class="section">
+      <h2>Contact</h2>
+      <p>
+        If you have any questions or feedback regarding this Privacy Policy or the security of your offline data, please contact: <br />
+        <a href="mailto:dev.iproger@gmail.com">dev.iproger@gmail.com</a><br />
+      </p>
+    </div>
+
+    <footer class="section muted" style="margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+      <small>Flash Note — Private, offline note taking and element annotations.</small>
+    </footer>
   </div>
-
-  <div class="section">
-    <h2>Data we collect</h2>
-    <p><strong>Highlights & notes</strong> — When you highlight text and save it through the extension, that highlighted text and any note you add are stored locally in the browser's storage by default.</p>
-    <p><strong>Notes</strong> — When you save a note through the extension, that note is stored locally in the browser's storage by default.</p>
-    <p><strong>Telegram sync (optional)</strong> — If you explicitly connect FlashNote to your Telegram account, selected highlights or notes will be sent to Telegram on your instruction. FlashNote does not collect your Telegram credentials; the connection uses the standard Telegram login/authorization flow that you initiate.</p>
-    <p><strong>Reminders</strong> — When you set a reminder for a note, the reminder is stored locally in the browser's storage by default.</p>
-    <p><strong>No automatic personal data collection</strong> — FlashNote does not collect names, email addresses, passwords, payment data, health data, or any other sensitive personal information unless you explicitly provide such information in a note or during an optional account/authorization flow.</p>
-    <p class="muted">In short: we only store what you explicitly save or sync.</p>
-  </div>
-
-  <div class="section">
-    <h2>How data is stored</h2>
-    <p>
-      By default, saved highlights and notes are stored locally in your browser using the extension's storage (e.g., <code>chrome.storage.local</code> or equivalent). They are not uploaded to our servers unless you enable a sync feature that sends content to Telegram or another service you authorize.
-    </p>
-    <p>
-      If you use Telegram sync, the extension will POST or send the selected content to your Telegram chat via the Telegram Bot/authorization you configure. That data will be handled by Telegram according to Telegram's privacy policies.
-    </p>
-  </div>
-
-  <div class="section">
-    <h2>What we do NOT do</h2>
-    <ul>
-      <li>We do not sell or rent your notes or highlight data to third parties.</li>
-      <li>We do not collect browsing history beyond the page content you explicitly save.</li>
-      <li>We do not log keystrokes, network traffic, or similar user activity unless you explicitly enable a feature that requires it.</li>
-    </ul>
-  </div>
-
-  <div class="section">
-    <h2>Third-party services</h2>
-    <p>
-      FlashNote may integrate with third-party services (for example, Telegram for syncing). Those services are governed by their own privacy policies. When you choose to connect FlashNote to a third-party service, you are responsible for reviewing and accepting that service’s terms and policies.
-    </p>
-  </div>
-
-  <div class="section">
-    <h2>Permissions & why we request them</h2>
-    <p class="muted">FlashNote requests only the permissions required to deliver its functionality. Brief explanations you can reuse for submission forms:</p>
-    <ul>
-      <li><strong>storage</strong> — to save user notes and highlights locally for offline access.</li>
-      <li><strong>sidePanel</strong> — to display the notes UI as a side panel in the browser.</li>
-      <li><strong>activeTab</strong> — to read the currently selected tab's content only when the user highlights and saves text (used for one-time capture actions).</li>
-      <li><strong>alarms</strong> — to schedule local reminders (user-initiated reminders for saved notes).</li>
-      <li><strong>notifications</strong> — to show reminder notifications when a scheduled reminder triggers.</li>
-      <li><strong>scripting</strong> — to inject a lightweight content script that captures the user's selected text when they use the extension (only active after user action).</li>
-      <li><strong>Host permissions</strong> — if required, limited host permissions are requested only for pages where the user explicitly saves content; no blanket access to all sites is requested unless necessary and declared.</li>
-    </ul>
-  </div>
-
-  <div class="section">
-    <h2>User choices & controls</h2>
-    <p>
-      You can manage and delete saved notes at any time from the side panel UI. If you connected Telegram and want to stop syncing, you can disconnect Telegram from the extension settings — this will stop further transmissions. To remove all local data, use the extension's "Clear all notes" function or uninstall the extension (browser storage will be removed on uninstall).
-    </p>
-  </div>
-
-  <div class="section">
-    <h2>Data retention</h2>
-    <p>
-      Notes saved locally remain until you delete them or uninstall the extension. If you sync notes to Telegram, retention is controlled by Telegram and your chat history settings on that platform.
-    </p>
-  </div>
-
-  <div class="section">
-    <h2>Security</h2>
-    <p>
-      We follow standard best practices to protect user data stored locally. Because data is stored on the user's device by default, its security also depends on the device and browser security settings. We encourage users to secure their devices with system-level protections.
-    </p>
-  </div>
-
-  <div class="section">
-    <h2>Children</h2>
-    <p>
-      FlashNote is not intended for use by children under 13. If you believe a child under 13 has provided personally identifiable information, please contact us and we will take steps to remove that information.
-    </p>
-  </div>
-
-  <div class="section">
-    <h2>Legal & compliance (GDPR/CCPA)</h2>
-    <p>
-      If you are in the EU or applicable jurisdiction and would like to request access, correction, or deletion of data stored by FlashNote, please contact us at the address below. We will respond to valid requests in accordance with applicable law.
-    </p>
-  </div>
-
-  <div class="section">
-    <h2>Changes to this policy</h2>
-    <p>
-      We may update this policy from time to time. Significant changes will be posted with an updated "Last updated" date. Continued use after changes implies acceptance of the updated policy.
-    </p>
-  </div>
-
-  <div class="section">
-    <h2>Contact</h2>
-    <p>
-      For questions or requests about this Privacy Policy or your data, contact: <br />
-      <a href="mailto:dev.iproger@gmail.com">dev.iproger@gmail.com</a><br />
-    </p>
-  </div>
-
-  <footer class="section muted">
-    <small>FlashNote — a lightweight side-panel note taker. This privacy policy is provided as a template. Replace any placeholders (contact email, company name, or specifics about data flows) with your actual details before publishing.</small>
-  </footer>
 </body>
 </html>
