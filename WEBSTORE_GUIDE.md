@@ -8,7 +8,7 @@ Flash Note kengaytmasini Chrome Web Store'ga yuklash va birinchi urinishdayoq ta
 Loyiha tarkibidan faqat kerakli fayllarni o'z ichiga olgan **`flash_note.zip`** arxivi yaratildi va loyiha ildiziga joylashtirildi. 
 
 ### ZIP tarkibiga kirgan fayllar:
-* `manifest.json` — Yangilangan versiya `2.1.1` va rasmiy tasniflar.
+* `manifest.json` — Yangilangan versiya `2.1.2` va rasmiy tasniflar.
 * `background.js` — Service worker (alarmlar va context menyular uchun).
 * `sidepanel.html` & `sidepanel.js` — Asosiy yon panel va notelar interfeysi.
 * `content.js`, `anchor.js`, `floating-ui.js` — Veb sahifalarga "Floating Notes" (elementlarga notelar) yopishtiruvchi skriptlar.
@@ -68,10 +68,6 @@ Chrome jamoasi manifestda so'ralgan ruxsatnomalarga (permissions) juda jiddiy e'
   * *Justification:* Used to trigger and schedule specific user alarms and deliver push notifications as active reminders for saved notes.
 * **`contextMenus`:**
   * *Justification:* Used to register a quick action in the right-click menu, allowing the user to instantly add a floating note (comment) to any webpage element.
-* **`activeTab` va `scripting`:**
-  * *Justification:* Necessary to inject the annotation content scripts (`content.js`, `floating-ui.js`, `anchor.js`) dynamically onto the tab when the user initiates adding a floating note or interacts with anchors.
-* **`host_permissions` (`*://*/*`):**
-  * *Justification:* Required to enable the highlight capture and floating notes features across all websites that the user visits, so they can keep notes anywhere.
 
 ---
 
@@ -85,6 +81,35 @@ Loyihadagi `policy/index.html` fayli maxfiylik siyosatini o'z ichiga olgan tayyo
 4. Bir necha daqiqadan so'ng sahifangiz faollashadi. Sizning maxfiylik siyosati havolangiz quyidagicha bo'ladi:
    `https://LazizbekDev.github.io/Flash.notes/policy/`
 5. Ushbu havolani Developer konsolidagi **Privacy Policy URL** maydoniga kiriting.
+
+---
+
+## 7. Tekshiruv uchun ko'rsatmalar (Test Instructions) 📝
+Chrome Web Store tekshiruvchilari (reviewers) kengaytmani to'g'ri tekshira olishlari uchun Developer Console'dagi **"Test instructions"** maydoniga quyidagi inglizcha matnni nusxalab joylashtiring:
+
+```text
+No login, signup, or external server authentication is required. Flash Note operates 100% locally and offline, saving all notes and data inside sandboxed browser storage (chrome.storage.local).
+
+Reviewers can verify all core features on any webpage using these simple steps:
+
+1. Open Side Panel:
+- Click the extension icon or press "Ctrl+Shift+Z" ("Cmd+Shift+Z" on Mac) to open the side panel.
+
+2. Take Notes:
+- Type text in the side panel, then click "Save" or press "Ctrl+Enter" ("Cmd+Enter" on Mac). The note appears in the local list.
+
+3. Create Floating Notes (Page Annotations):
+- Click the "Add Floating Note" icon in the header, press "Ctrl+Shift+K" ("Cmd+Shift+K" on Mac), or right-click the page and select "Add Flash Note here".
+- The page dims. Click any element (heading, button, etc.) to anchor a note card directly to it. Type content and click away. The floating comment remains pinned when you scroll.
+
+4. Page Highlights:
+- Select text on any web page using your mouse cursor, or press "Alt+Shift+F".
+- The text is instantly captured as a rich-formatted highlight note in the side panel.
+
+5. Reminders & Local Notifications:
+- Hover over any note in the side panel, click the Bell (Alarm) icon, choose a time (e.g., +1 minute), and save.
+- When the time arrives, a local alarm will trigger a native desktop push notification containing the note's preview.
+```
 
 ---
 
