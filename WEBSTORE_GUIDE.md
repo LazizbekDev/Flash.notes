@@ -8,7 +8,7 @@ Flash Note kengaytmasini Chrome Web Store'ga yuklash va birinchi urinishdayoq ta
 Loyiha tarkibidan faqat kerakli fayllarni o'z ichiga olgan **`flash_note.zip`** arxivi yaratildi va loyiha ildiziga joylashtirildi. 
 
 ### ZIP tarkibiga kirgan fayllar:
-* `manifest.json` — Yangilangan versiya `2.1.2` va rasmiy tasniflar.
+* `manifest.json` — Yangilangan versiya `2.1.3` va rasmiy tasniflar.
 * `background.js` — Service worker (alarmlar va context menyular uchun).
 * `sidepanel.html` & `sidepanel.js` — Asosiy yon panel va notelar interfeysi.
 * `content.js`, `anchor.js`, `floating-ui.js` — Veb sahifalarga "Floating Notes" (elementlarga notelar) yopishtiruvchi skriptlar.

@@ -5,6 +5,7 @@ yarn.lock
 
 # Build and Distribution
 *.zip
+!flash_note.zip
 dist/
 build/
 out/
